@@ -68,7 +68,6 @@ def image_to_stl(file_path):
     # dummy = driver.find_element(By.ID, "")
     # dummy.clear()
     # dummy.send_keys("")
-
     create_button = driver.find_element(By.NAME, 'submit')
     create_button.click()
     
@@ -79,7 +78,7 @@ def stl_to_gcode(stl_path):
     start_time = time.time()
     current_os = platform.system().lower()
     print('current_os: ', current_os)
-    cura_command = ['open', '-a', '/Applications/Ultimaker Cura.app', stl_path] if current_os == 'darwin' else [r'C:\Program Files\Ultimaker Cura 4.x\Cura.exe', stl_path]
+    cura_command = ['open', '-a', '/Applications/Ultimaker Cura.app', stl_path] if current_os == 'darwin' else [r'C:\Program Files\Ultimaker Cura 5.6.0\UltiMaker-Cura.exe', stl_path]
     subprocess.Popen(cura_command)
         
     while time.time() - start_time < timeout:    
@@ -161,8 +160,8 @@ def monitor_directory_changes(directory, interval=3):
 file_path = '/Users/admin/Desktop/Proyectos/imageToStlSeleniumk.py/goku_and_frieza_vs_jiren_render_dokkan_battle_by_maxiuchiha22dcmnkx7Ob0hD.webp'
 
 try:
-    image_to_stl('/Users/admin/Downloads/rorro.jpeg')
-    monitor_directory_changes('/Users/admin/Downloads')
+    image_to_stl('C:\\Users\\Felipe\\Desktop\\Proyectos\\imagetogcode\\input.jpg')
+    monitor_directory_changes('C:\\Users\\Felipe\\Downloads')
     stl_files = unzip_stl()
     stl_to_gcode(stl_path=stl_files[0])
 
