@@ -13,6 +13,24 @@ import glob
 import subprocess
 import platform
 
+def remove_extension(filename):
+    last_dot_index = filename.rfind('.')
+    if last_dot_index != -1:
+        base_filename = filename[:last_dot_index]
+    else:
+        base_filename = filename
+    return base_filename
+
+def get_paths(image_filename):
+    current_os = platform.system().lower()
+    download_path = '/Users/admin/Downloads/' if current_os=='darwin' else 'C:\\Users\\Felipe\\Downloads\\'
+    image_directory = '/Users/admin/Desktop/images/' if current_os=='darwin' else 'C:\\Users\\Felipe\\Desktop\\images\\'
+    image_path = image_directory + image_filename
+    zip_path = 'NL-' + remove_extension(image_filename) + '.zip'
+    stl_path = 'NL-' + remove_extension(image_filename) + '.stl'
+
+    return download_path, image_path, zip_path, stl_path
+
 def image_to_stl(file_path):
     download_dir = "./stls"  # Update this path
     if not os.path.exists(download_dir):
@@ -71,9 +89,7 @@ def image_to_stl(file_path):
     create_button = driver.find_element(By.NAME, 'submit')
     create_button.click()
     
-
 def stl_to_gcode(stl_path):
-    
     timeout = 300
     start_time = time.time()
     current_os = platform.system().lower()
@@ -86,7 +102,8 @@ def stl_to_gcode(stl_path):
             slice_button = pyautogui.locateCenterOnScreen(current_os + '_slice_button.png', confidence=0.9)
             if slice_button:
                 time.sleep(2)
-                pyautogui.moveTo(1170, 850)
+                pyautogui.moveTo(1170, 850) #mac
+                # pyautogui.moveTo(1650, 1028) #monitor
                 pyautogui.click()
                 print("Slice button clicked.")
                 break
@@ -130,41 +147,48 @@ def stl_to_gcode(stl_path):
 def list_files(directory):
     return set(f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)))
 
-def unzip_stl():
-    zip_dir ='/Users/admin/Downloads'
-    zip_files = glob.glob(os.path.join('/Users/admin/Downloads', '*.zip'))
-    if zip_files:
-        with zipfile.ZipFile(zip_files[0], 'r') as zip_ref:
-            zip_ref.extractall(zip_dir)
-    zip_files = glob.glob(os.path.join(zip_dir, '*.zip'))
-    if zip_files:
-        with zipfile.ZipFile(zip_files[0], 'r') as zip_ref:
-            zip_ref.extractall(zip_dir)
-    stl_files = glob.glob(os.path.join(zip_dir, '*.stl'))
-    return stl_files
-    
-def monitor_directory_changes(directory, interval=3):
-    previous_files = list_files(directory)
-    print(f"Initial files: {previous_files}")
+def unzip_stl(zip_file_path):
+    zip_dir = os.path.dirname(zip_file_path)
+    extracted_stl_files = []
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        all_files = zip_ref.namelist()
+        stl_files = [f for f in all_files if f.lower().endswith('.stl')]
+        for stl_file in stl_files:
+            zip_ref.extract(stl_file, zip_dir)
+            extracted_stl_files.append(os.path.join(zip_dir, stl_file))
 
-    while True:
-        time.sleep(interval)
-        current_files = list_files(directory)
-        if current_files != previous_files:
-            time.sleep(10)
-            driver.quit()
-            break
-        else:
-            print("No change detected.")
+def monitor_download(zip_path):
+    while not os.path.exists(zip_path):
+        print('File not yet downloaded...')
+        time.sleep(3)
+    print('Downloaded')
+    time.sleep(10)
+    driver.quit()
 
-file_path = '/Users/admin/Desktop/Proyectos/imageToStlSeleniumk.py/goku_and_frieza_vs_jiren_render_dokkan_battle_by_maxiuchiha22dcmnkx7Ob0hD.webp'
+#     previous_files = list_files(directory)
+#     print(f"Initial files: {previous_files}")
+
+#     while True:
+#         time.sleep(interval)
+#         current_files = list_files(directory)
+#         if current_files != previous_files:
+#             time.sleep(10)
+#             driver.quit()
+#             break
+#         else:
+#             print("No change detected.")
+
+# file_path = '/Users/admin/Desktop/Proyectos/imageToStlSeleniumk.py/goku_and_frieza_vs_jiren_render_dokkan_battle_by_maxiuchiha22dcmnkx7Ob0hD.webp'
 
 try:
-    image_to_stl('C:\\Users\\Felipe\\Desktop\\Proyectos\\imagetogcode\\input.jpg')
-    monitor_directory_changes('C:\\Users\\Felipe\\Downloads')
-    stl_files = unzip_stl()
-    stl_to_gcode(stl_path=stl_files[0])
-
+    filename='input.jpg'
+    download_path, image_path, zip_path, stl_path = get_paths(filename)
+    print('image_path: ',image_path)
+    image_to_stl(image_path)
+    monitor_download(download_path + zip_path)
+    unzip_stl(download_path + zip_path)
+    stl_to_gcode(download_path + stl_path)
+    # unzip_stl('/Users/admin/Downloads/NL-rorro.zip')
 
 except Exception as e:
     print(f"An error occurred: {e}")
