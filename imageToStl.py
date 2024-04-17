@@ -26,25 +26,20 @@ def get_paths(image_filename):
     download_path = '/Users/admin/Downloads/' if current_os=='darwin' else 'C:\\Users\\Felipe\\Downloads\\'
     image_directory = '/Users/admin/Desktop/images/' if current_os=='darwin' else 'C:\\Users\\Felipe\\Desktop\\images\\'
     image_path = image_directory + image_filename
-    zip_path = 'NL-' + remove_extension(image_filename) + '.zip'
-    stl_path = 'NL-' + remove_extension(image_filename) + '.stl'
+    zip_path = download_path + 'NL-' + remove_extension(image_filename) + '.zip'
+    stl_path = download_path + 'NL-' + remove_extension(image_filename) + '.stl'
 
-    return download_path, image_path, zip_path, stl_path
+    return image_path, zip_path, stl_path
 
 def image_to_stl(file_path):
-    download_dir = "./stls"  # Update this path
-    if not os.path.exists(download_dir):
-        os.makedirs(download_dir)
-
+    
     firefox_options = Options()
     firefox_options.set_preference("browser.download.folderList", 2)
     firefox_options.set_preference("browser.download.manager.showWhenStarting", False)
-    firefox_options.set_preference("browser.download.dir", download_dir)
     firefox_options.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/sla")  # MIME type for STL files
     global driver
-    driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=firefox_options)
-
     url = 'https://lithophanemaker.com/Night%20Light%20Lithophane.html'
+    driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=firefox_options)
     driver.get(url)
 
     input_element = WebDriverWait(driver, 15).until(
@@ -86,6 +81,7 @@ def image_to_stl(file_path):
     # dummy = driver.find_element(By.ID, "")
     # dummy.clear()
     # dummy.send_keys("")
+
     create_button = driver.find_element(By.NAME, 'submit')
     create_button.click()
     
@@ -182,12 +178,11 @@ def monitor_download(zip_path):
 
 try:
     filename='input.jpg'
-    download_path, image_path, zip_path, stl_path = get_paths(filename)
-    print('image_path: ',image_path)
+    image_path, zip_path, stl_path = get_paths(filename)
     image_to_stl(image_path)
-    monitor_download(download_path + zip_path)
-    unzip_stl(download_path + zip_path)
-    stl_to_gcode(download_path + stl_path)
+    monitor_download(zip_path)
+    unzip_stl(zip_path)
+    stl_to_gcode(stl_path)
     # unzip_stl('/Users/admin/Downloads/NL-rorro.zip')
 
 except Exception as e:
