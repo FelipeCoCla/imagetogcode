@@ -9,9 +9,29 @@ import pyautogui
 import time
 import os
 import zipfile
-import glob
 import subprocess
 import platform
+
+def force_quit_cura():
+    script = '''
+    tell application "System Events"
+        key code 53 using {command down, option down}
+    end tell
+    '''
+    subprocess.run(["osascript", "-e", script])
+    time.sleep(1)
+    xcura,ycura = pyautogui.locateCenterOnScreen('darwin_curafq.png')
+    pyautogui.moveTo(xcura,ycura)
+    pyautogui.click()
+    xfq1, yfq1 = pyautogui.locateCenterOnScreen('darwin_fq1.png')
+    pyautogui.moveTo(xfq1,yfq1)
+    pyautogui.click()
+    time.sleep(1)
+    xfq2, yfq2 = pyautogui.locateCenterOnScreen('darwin_fq2.png')
+    pyautogui.moveTo(xfq2,yfq2)
+    pyautogui.click()
+    time.sleep(1)
+    pyautogui.press('esc')
 
 def remove_extension(filename):
     last_dot_index = filename.rfind('.')
@@ -37,8 +57,8 @@ def image_to_stl(file_path):
     firefox_options.set_preference("browser.download.folderList", 2)
     firefox_options.set_preference("browser.download.manager.showWhenStarting", False)
     firefox_options.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/sla")  # MIME type for STL files
-    global driver
     url = 'https://lithophanemaker.com/Night%20Light%20Lithophane.html'
+    global driver
     driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=firefox_options)
     driver.get(url)
 
@@ -86,19 +106,22 @@ def image_to_stl(file_path):
     create_button.click()
     
 def stl_to_gcode(stl_path):
-    timeout = 300
+    timeout = 40
     start_time = time.time()
     current_os = platform.system().lower()
     print('current_os: ', current_os)
     cura_command = ['open', '-a', '/Applications/Ultimaker Cura.app', stl_path] if current_os == 'darwin' else [r'C:\Program Files\Ultimaker Cura 5.6.0\UltiMaker-Cura.exe', stl_path]
     subprocess.Popen(cura_command)
-        
-    while time.time() - start_time < timeout:    
+    slice_button = None
+    save_button  = None
+    while time.time() - start_time < timeout:
+        print('Timeout: ',time.time() - start_time)
         try:
             slice_button = pyautogui.locateCenterOnScreen(current_os + '_slice_button.png', confidence=0.9)
             if slice_button:
                 time.sleep(2)
-                pyautogui.moveTo(1170, 850) #mac
+                # pyautogui.moveTo(1170, 850) #mac
+                pyautogui.moveTo(slice_button.x/2, slice_button.y/2)
                 # pyautogui.moveTo(1650, 1028) #monitor
                 pyautogui.click()
                 print("Slice button clicked.")
@@ -113,6 +136,7 @@ def stl_to_gcode(stl_path):
     if slice_button:  
         start_time = time.time()
         while time.time() - start_time < timeout:
+            print('Timeout: ',time.time() - start_time)
             try:
                 save_button = pyautogui.locateCenterOnScreen(current_os + '_save_button.png', confidence=0.9)
                 if save_button:
@@ -135,13 +159,13 @@ def stl_to_gcode(stl_path):
                     print("Save button not found, retrying in 3s")
                     time.sleep(3)
             except pyautogui.ImageNotFoundException:
-                print("Save button not found, retrying in 3s.")
+                print("Save button not found, retrying in 3s.")    
                 time.sleep(3)
 
+    force_quit_cura()
+    time.sleep(3)
+    print('Trying again...')
     stl_to_gcode(stl_path)
-
-def list_files(directory):
-    return set(f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)))
 
 def unzip_stl(zip_file_path):
     zip_dir = os.path.dirname(zip_file_path)
@@ -161,27 +185,12 @@ def monitor_download(zip_path):
     time.sleep(10)
     driver.quit()
 
-#     previous_files = list_files(directory)
-#     print(f"Initial files: {previous_files}")
-
-#     while True:
-#         time.sleep(interval)
-#         current_files = list_files(directory)
-#         if current_files != previous_files:
-#             time.sleep(10)
-#             driver.quit()
-#             break
-#         else:
-#             print("No change detected.")
-
-# file_path = '/Users/admin/Desktop/Proyectos/imageToStlSeleniumk.py/goku_and_frieza_vs_jiren_render_dokkan_battle_by_maxiuchiha22dcmnkx7Ob0hD.webp'
-
 try:
     filename='input.jpg'
     image_path, zip_path, stl_path = get_paths(filename)
-    image_to_stl(image_path)
-    monitor_download(zip_path)
-    unzip_stl(zip_path)
+    # image_to_stl(image_path)
+    # monitor_download(zip_path)
+    # unzip_stl(zip_path)
     stl_to_gcode(stl_path)
     # unzip_stl('/Users/admin/Downloads/NL-rorro.zip')
 
